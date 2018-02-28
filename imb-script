@@ -1,0 +1,45 @@
+#!/bin/bash
+HALF_OF_NODES_TYPE_1=2
+#SBATCH --job-name=fio-ro
+##SBATCH --array=1-HALF_OF_NODES_TYPE_1
+#SBATCH --nodes=2
+#SBATCH --cpus-per-task=4
+#SBATCH --output=/alaska/john/fio-%A-%a.out
+FIO_NUM_THREADS=8
+echo "fio $SLURM_ARRAY_JOB_ID [ $SLURM_ARRAY_TASK_ID ] running on:
+$SLURMD_NODENAME with $FIO_NUM_THREADS"
+HOME=/alaska/john
+TESTDIR=$HOME/tests_10Jun/fio-2.1.10
+
+filext=`hostname`
+# Generate Machinefile for mpich such that hosts are in the same
+#  order as if run via srun
+j="NVME_RDMA_100g-imb"
+WORK=$TESTDIR/results
+
+EXEC=$TESTDIR/fio.installed
+
+cat <<EOJOB | $EXEC  -
+[global]
+#directory=/alaska/john/fio-dump
+#directory=/scratch/fio-dump
+directory=/mnt/glusterfs/test/fio
+direct=1
+rw=readwrite
+rwmixread=99
+rwmixwrite=1
+# blocksize split of 20% 4k, 16k, 256k and 1024k
+bssplit=4k/1:16k/5:64k/2:256k/2:1M/90
+refill_buffers
+norandommap
+randrepeat=0
+ioengine=sync
+group_reporting
+runtime=180
+time_based
+[fio-ro-$SLURM_ARRAY_TASK_ID]
+nrfiles=1
+filesize=2G
+numjobs=$FIO_NUM_THREADS
+name=fio-ro-$SLURM_ARRAY_TASK_ID
+EOJOB
