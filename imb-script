@@ -21,6 +21,7 @@ EXEC=$TESTDIR/fio.installed
 
 cat <<EOJOB | $EXEC  -
 [global]
+###Change these to match your mount points
 #directory=/alaska/john/fio-dump
 #directory=/scratch/fio-dump
 directory=/mnt/glusterfs/test/fio
